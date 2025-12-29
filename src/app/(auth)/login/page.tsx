@@ -4,7 +4,7 @@ import { Suspense, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Mail, Github, Loader2 } from 'lucide-react';
+import { Mail, Github, Loader2, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 function LoginForm() {
@@ -31,6 +31,18 @@ function LoginForm() {
     setIsLoading(provider);
     try {
       await signIn(provider, { callbackUrl });
+    } catch {
+      setIsLoading(null);
+    }
+  };
+
+  const handleDevLogin = async () => {
+    setIsLoading('dev');
+    try {
+      await signIn('dev-credentials', {
+        email: 'dev@loumi.local',
+        callbackUrl,
+      });
     } catch {
       setIsLoading(null);
     }
@@ -164,6 +176,40 @@ function LoginForm() {
           GitHub
         </button>
       </div>
+
+      {/* Dev Mode Login - Only visible in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-dashed" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-amber-600 dark:text-amber-400">
+                Development Only
+              </span>
+            </div>
+          </div>
+          <button
+            onClick={handleDevLogin}
+            disabled={isLoading !== null}
+            className={cn(
+              'w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg font-medium',
+              'border-2 border-dashed border-amber-500/50 bg-amber-50 dark:bg-amber-900/20',
+              'text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30',
+              'transition-colors',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            {isLoading === 'dev' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Code className="w-4 h-4" />
+            )}
+            Dev Mode Login (Skip Auth)
+          </button>
+        </>
+      )}
 
       {/* Register Link */}
       <p className="text-center text-sm text-muted-foreground">

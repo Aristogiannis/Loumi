@@ -86,14 +86,22 @@ export async function POST(req: Request) {
           // Restore PII in the response for storage
           const restoredText = restoreResponsePII(text, privacyResult.piiMap);
 
+          // Helper to safely convert token counts (handle NaN/undefined)
+          const safeTokenCount = (value: number | undefined): number | null => {
+            if (value === undefined || value === null || Number.isNaN(value)) {
+              return null;
+            }
+            return Math.floor(value);
+          };
+
           // Log to audit trail
           await createAuditLog({
             userId: session.user.id,
             action: 'chat_completion',
             provider: modelConfig.provider,
             model: modelId,
-            tokensInput: usage?.promptTokens,
-            tokensOutput: usage?.completionTokens,
+            tokensInput: safeTokenCount(usage?.promptTokens),
+            tokensOutput: safeTokenCount(usage?.completionTokens),
             piiDetected:
               privacyResult.detectedPII.length > 0
                 ? privacyResult.detectedPII
@@ -109,7 +117,7 @@ export async function POST(req: Request) {
               role: 'assistant',
               content: restoredText,
               model: modelId,
-              tokensUsed: usage?.totalTokens,
+              tokensUsed: safeTokenCount(usage?.totalTokens),
               thinking: reasoning || null,
               piiDetected:
                 privacyResult.detectedPII.length > 0
